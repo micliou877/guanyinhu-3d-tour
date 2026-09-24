@@ -9,25 +9,29 @@ import { SplatMesh, SparkRenderer } from "@sparkjsdev/spark";
    若之後視覺校對發現方向或比例不準,只需微調這個區塊。
    ========================================================================= */
 
-// COLMAP 座標系是 Y-down;Spark/three.js 需要 Y-up,
-// 故對 splat 套用 180° 繞 X 軸旋轉 (quaternion 1,0,0,0)。
-// 建築中心點也要套用同一個旋轉:(x,y,z) -> (x,-y,-z)
-const COLMAP_CENTER = { x: 0.4129947, y: 1.45180947, z: 0.09645254 };
-const CENTER = new THREE.Vector3(COLMAP_CENTER.x, -COLMAP_CENTER.y, -COLMAP_CENTER.z);
+// COLMAP 重建出來的世界座標系,「上」方向並不會自動對齊真正的重力垂直方向
+// (COLMAP 沒有任何水平參考,整個座標系可能歪斜十幾度)。
+// C:\3dgs\work\fix_tilt.py 用稀疏點雲做 RANSAC 平面偵測,找出地面/草皮所在的
+// 主要平面,計算出「把地面轉平」所需的校正旋轉,再與原本 Y-down -> Y-up 的
+// 180° 翻轉合併成單一四元數,直接套在 splatMesh 上;建築中心點也套用同一個
+// 完整旋轉(先校正傾斜,再翻轉)。若之後重新跑 COLMAP,這組數字要重新計算。
+const TILT_QUAT = { x: 0.13566441020102324, y: 0.0000309, z: 0, w: -0.990754846997176 };
+const CENTER = new THREE.Vector3(0.41300097, 1.42430072, -0.29734846);
 
 const LIMITS = {
-  minDistance: 2.2,
-  maxDistance: 6.0,
-  minPolarDeg: 40,   // 對應影片拍到的最高仰角(接近頂視)
-  maxPolarDeg: 97,   // 對應影片拍到的最低仰角(接近水平/略俯視地面)
+  minDistance: 2.1,
+  maxDistance: 6.2,
+  minPolarDeg: 75,   // 對應影片拍到的最高仰角
+  maxPolarDeg: 155,  // 對應影片拍到的最低仰角(多為由下往上/略仰角拍攝)
 };
 
-// 方位角說明:世界座標方位角 = -COLMAP 方位角(因 Z 軸在旋轉後反向)
+// 方位角與仰角皆已在「地面校正後」的座標系中重新計算(見 fix_tilt2.py 產出的
+// frame_camera_map_corrected.json),數值取自實際拍攝到的鏡位,而非隨意假設。
 const VIEWS = {
-  initial: { azimuthDeg: -163.8, elevationDeg: 37, distance: 3.2 },
-  road:    { azimuthDeg: 120,    elevationDeg: 20, distance: 4.2 },
-  river:   { azimuthDeg: -45,    elevationDeg: 22, distance: 3.5 },
-  aerial:  { azimuthDeg: 0,      elevationDeg: 48, distance: 2.8 },
+  initial: { azimuthDeg: -164, elevationDeg: -15, distance: 3.2 },
+  road:    { azimuthDeg: 120,  elevationDeg: -20, distance: 4.0 },
+  river:   { azimuthDeg: -45,  elevationDeg: -20, distance: 3.3 },
+  aerial:  { azimuthDeg: 0,    elevationDeg: -8,  distance: 2.8 },
 };
 
 const MODEL_URL = "./model.spz";
@@ -152,8 +156,8 @@ try {
       showHint();
     },
   });
-  // 修正座標系(COLMAP/OpenCV Y-down -> three.js Y-up)
-  splatMesh.quaternion.set(1, 0, 0, 0);
+  // 修正座標系:COLMAP Y-down -> three.js Y-up,並校正地面傾斜(見上方 TILT_QUAT)
+  splatMesh.quaternion.set(TILT_QUAT.x, TILT_QUAT.y, TILT_QUAT.z, TILT_QUAT.w);
   scene.add(splatMesh);
 
   // SplatMesh 內部載入失敗時只會產生一個沒人接的 rejected promise,
