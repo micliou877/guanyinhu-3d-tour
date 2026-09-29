@@ -34,7 +34,7 @@ const VIEWS = {
   aerial:  { azimuthDeg: 0,    elevationDeg: -8,  distance: 2.8 },
 };
 
-const MODEL_URL = "./model.spz";
+const MODEL_URL = "./model.spz?v=20260929c";
 
 /* ========================================================================= */
 
