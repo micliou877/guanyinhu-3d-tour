@@ -15,26 +15,26 @@ import { SplatMesh, SparkRenderer } from "@sparkjsdev/spark";
 // 主要平面,計算出「把地面轉平」所需的校正旋轉,再與原本 Y-down -> Y-up 的
 // 180° 翻轉合併成單一四元數,直接套在 splatMesh 上;建築中心點也套用同一個
 // 完整旋轉(先校正傾斜,再翻轉)。若之後重新跑 COLMAP,這組數字要重新計算。
-const TILT_QUAT = { x: 0.13566441020102324, y: 0.0000309, z: 0, w: -0.990754846997176 };
-const CENTER = new THREE.Vector3(0.41300097, 1.42430072, -0.29734846);
+const TILT_QUAT = { x: 0.9907548474798438, y: -0.00000423469331785901, z: 0, w: 0.13566441013493144 };
+const CENTER = new THREE.Vector3(0.4129824, -1.42430072, 0.29737424);
 
 const LIMITS = {
-  minDistance: 2.1,
-  maxDistance: 6.2,
-  minPolarDeg: 75,   // 對應影片拍到的最高仰角
-  maxPolarDeg: 155,  // 對應影片拍到的最低仰角(多為由下往上/略仰角拍攝)
+  minDistance: 2.15,
+  maxDistance: 6.15,
+  minPolarDeg: 32,   // 對應影片拍到的最高仰角(接近頂視)
+  maxPolarDeg: 88,   // 對應影片拍到的最低仰角(接近水平)
 };
 
 // 方位角與仰角皆已在「地面校正後」的座標系中重新計算(見 fix_tilt2.py 產出的
 // frame_camera_map_corrected.json),數值取自實際拍攝到的鏡位,而非隨意假設。
 const VIEWS = {
-  initial: { azimuthDeg: -164, elevationDeg: -15, distance: 3.2 },
-  road:    { azimuthDeg: 120,  elevationDeg: -20, distance: 4.0 },
-  river:   { azimuthDeg: -45,  elevationDeg: -20, distance: 3.3 },
-  aerial:  { azimuthDeg: 0,    elevationDeg: -8,  distance: 2.8 },
+  initial: { azimuthDeg: -162, elevationDeg: 25, distance: 3.3 },
+  road:    { azimuthDeg: 120,  elevationDeg: 20, distance: 4.0 },
+  river:   { azimuthDeg: -50,  elevationDeg: 15, distance: 3.2 },
+  aerial:  { azimuthDeg: 30,   elevationDeg: 48, distance: 2.6 },
 };
 
-const MODEL_URL = "./model.spz?v=20260929c";
+const MODEL_URL = "./model.spz?v=20260929d";
 
 /* ========================================================================= */
 
